@@ -1,0 +1,21 @@
+package com.taxiapp.driver_auth.dto.request
+
+import com.taxiapp.driver_auth.dto.AddressTO
+import org.springframework.web.multipart.MultipartFile
+
+data class DriverAuthenticationRequestTO(
+
+    val driverLicenceNumber: String,
+
+    val registrationDocumentNumber: String,
+
+    val plateNumber: String,
+
+    val driverLicenseFrontPhoto: MultipartFile,
+
+    val driverLicenseBackPhoto: MultipartFile,
+
+    val pesel: String,
+
+    val address: AddressTO
+)

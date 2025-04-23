@@ -1,0 +1,10 @@
+package com.taxiapp.driver_auth.entity.enums
+
+enum class AuthenticationEvent {
+    DATA_SUBMITTED,
+    AUTO_VERIFICATION_PASSED,
+    AUTO_VERIFICATION_REJECTED,
+    MANUAL_VERIFICATION_PASSED,
+    MANUAL_VERIFICATION_REJECTED,
+    VERIFICATION_CANCELLED,
+}
