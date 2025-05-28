@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import java.security.Principal
 
-@Controller("/driver-auth")
+@Controller("/api/driver-auth")
 class DriverController(
     private val driverAuthenticationService: DriverAuthenticationServiceImpl
 ) {

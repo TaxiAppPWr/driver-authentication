@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class SecurityConfig {
+open class SecurityConfig {
 
     @Bean
-    fun jwtAuthFilterRegistration(jwtAuthFilter: JwtFilter): FilterRegistrationBean<Filter> {
+    open fun jwtAuthFilterRegistration(jwtAuthFilter: JwtFilter): FilterRegistrationBean<Filter> {
         val registration = FilterRegistrationBean<Filter>()
         registration.filter = jwtAuthFilter
         registration.addUrlPatterns("*")

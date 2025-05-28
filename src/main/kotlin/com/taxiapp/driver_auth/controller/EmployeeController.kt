@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 
-@Controller("/employee")
+@Controller("/api/employee")
 class EmployeeController(
     private val driverAuthenticationService: DriverAuthenticationService
 ) {

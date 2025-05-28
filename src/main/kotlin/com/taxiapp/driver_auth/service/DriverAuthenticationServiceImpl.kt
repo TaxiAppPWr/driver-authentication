@@ -1,5 +1,7 @@
 package com.taxiapp.driver_auth.service
 
+import aws.sdk.kotlin.services.cognitoidentityprovider.CognitoIdentityProviderClient
+import aws.sdk.kotlin.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest
 import com.taxiapp.driver_auth.dto.AddressTO
 import com.taxiapp.driver_auth.dto.event.DriverAuthenticationApprovedEvent
 import com.taxiapp.driver_auth.dto.event.DriverAuthenticationFailedEvent
@@ -15,6 +17,9 @@ import com.taxiapp.driver_auth.entity.enums.VerificationStatus
 import com.taxiapp.driver_auth.repository.DriverAuthenticationInfoRepository
 import com.taxiapp.driver_auth.repository.DriverAuthenticationLogRepository
 import com.taxiapp.driver_auth.repository.DriverPersonalInfoRepository
+import jakarta.transaction.Transactional
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.amqp.core.TopicExchange
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Value
@@ -24,13 +29,14 @@ import java.time.Instant
 import java.util.*
 
 @Service
-class DriverAuthenticationServiceImpl(
-    val driverPersonalInfoRepository: DriverPersonalInfoRepository,
-    val driverAuthenticationInfoRepository: DriverAuthenticationInfoRepository,
-    val driverAuthenticationLogRepository: DriverAuthenticationLogRepository,
-    val storageService: FileStorageService,
-    val exchange: TopicExchange,
-    val template: RabbitTemplate
+open class DriverAuthenticationServiceImpl(
+    private val driverPersonalInfoRepository: DriverPersonalInfoRepository,
+    private val driverAuthenticationInfoRepository: DriverAuthenticationInfoRepository,
+    private val driverAuthenticationLogRepository: DriverAuthenticationLogRepository,
+    private val storageService: FileStorageService,
+    private val exchange: TopicExchange,
+    private val template: RabbitTemplate,
+    private val cognitoClient: CognitoIdentityProviderClient
 ) : DriverAuthenticationService {
 
     @Value("\${rabbit.topic.driver-auth.submitted}")
@@ -41,6 +47,12 @@ class DriverAuthenticationServiceImpl(
 
     @Value("\${rabbit.topic.driver-auth.approved}")
     private val driverAuthApprovedTopic: String? = null
+
+    @Value("\${aws.cognito.user-pool-id}")
+    private val cognitoUserPoolId: String? = null
+
+    @Value("\${aws.cognito.group-name}")
+    private val cognitoGroupName: String? = null
 
     override fun createDriverInfo(userEvent: DriverCreatedEvent) {
         if (!driverPersonalInfoRepository.existsByUsername(userEvent.username))
@@ -61,7 +73,7 @@ class DriverAuthenticationServiceImpl(
         val driverPersonalInfo = driverPersonalInfoRepository.findByUsername(username)
         if (driverPersonalInfo != null) {
             return AuthenticationStatusTO(
-                status = driverPersonalInfo.verificationStatus
+                status = driverPersonalInfo.verificationStatus.name
             )
         }
         return ResultTO(
@@ -69,6 +81,7 @@ class DriverAuthenticationServiceImpl(
         )
     }
 
+    @Transactional
     override fun submitDriverAuthentication(
         username: String,
         authenticationRequestTO: DriverAuthenticationRequestTO
@@ -141,6 +154,7 @@ class DriverAuthenticationServiceImpl(
         )
     }
 
+    @Transactional
     override fun performAutoVerification(username: String) {
         val driverPersonalInfo = driverPersonalInfoRepository.findByUsername(username)
             ?: return
@@ -165,6 +179,8 @@ class DriverAuthenticationServiceImpl(
 
         driverAuthenticationLogRepository.save(authenticationLog)
 
+        // TODO: Inform employee about pending verification request
+
         if (!success)
             template.convertAndSend(
                 exchange.name,
@@ -178,6 +194,7 @@ class DriverAuthenticationServiceImpl(
 
     }
 
+    @Transactional
     override fun cancelDriverAuthentication(
         username: String,
     ): ResultInterface {
@@ -268,6 +285,7 @@ class DriverAuthenticationServiceImpl(
         return pendingVerification
     }
 
+    @Transactional
     override fun approveVerification(id: Long): ResultInterface {
         val driverPersonalInfo = driverPersonalInfoRepository.findById(id)
             .orElse(null) ?: return ResultTO(httpStatus = HttpStatus.NOT_FOUND)
@@ -292,6 +310,16 @@ class DriverAuthenticationServiceImpl(
             statusBefore = driverPersonalInfo.verificationStatus,
             statusAfter = VerificationStatus.APPROVED
         )
+
+        val addUserToGroupRequest = AdminAddUserToGroupRequest {
+            groupName = cognitoGroupName
+            username = driverPersonalInfo.username
+            userPoolId = cognitoUserPoolId
+        }
+
+        runBlocking {
+            launch { cognitoClient.adminAddUserToGroup(addUserToGroupRequest) }
+        }
 
         driverPersonalInfo.verificationStatus = VerificationStatus.APPROVED
         driverPersonalInfoRepository.save(driverPersonalInfo)
@@ -333,6 +361,7 @@ class DriverAuthenticationServiceImpl(
         )
     }
 
+    @Transactional
     override fun rejectVerification(id: Long): ResultInterface {
         val driverPersonalInfo = driverPersonalInfoRepository.findById(id)
             .orElse(null) ?: return ResultTO(httpStatus = HttpStatus.NOT_FOUND)
