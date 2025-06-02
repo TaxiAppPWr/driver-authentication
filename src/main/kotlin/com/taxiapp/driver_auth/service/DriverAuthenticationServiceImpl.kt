@@ -25,6 +25,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import java.time.Instant
 import java.util.*
 
@@ -55,15 +56,15 @@ open class DriverAuthenticationServiceImpl(
     private val cognitoGroupName: String? = null
 
     override fun createDriverInfo(userEvent: DriverCreatedEvent) {
-        if (!driverPersonalInfoRepository.existsByUsername(userEvent.username))
+        if (driverPersonalInfoRepository.existsByUsername(userEvent.username))
             return
 
         val personalInfo = DriverPersonalInfo(
             username = userEvent.username,
-            name = userEvent.firstName,
-            surname = userEvent.lastName,
+            name = userEvent.firstname,
+            surname = userEvent.lastname,
             email = userEvent.email,
-            verificationStatus = VerificationStatus.PENDING_AUTO_VERIFICATION
+            verificationStatus = VerificationStatus.WAITING_FOR_SUBMIT
         )
 
         driverPersonalInfoRepository.save(personalInfo)
@@ -84,7 +85,9 @@ open class DriverAuthenticationServiceImpl(
     @Transactional
     override fun submitDriverAuthentication(
         username: String,
-        authenticationRequestTO: DriverAuthenticationRequestTO
+        authenticationRequestTO: DriverAuthenticationRequestTO,
+        licenseFrontPhoto: MultipartFile,
+        licenseBackPhoto: MultipartFile
     ): ResultInterface {
         val driverPersonalInfo = driverPersonalInfoRepository.findByUsername(username)
             ?: return ResultTO(httpStatus = HttpStatus.NOT_FOUND)
@@ -100,8 +103,8 @@ open class DriverAuthenticationServiceImpl(
         }
 
         // TODO: Save photos to S3
-        val frontLicencePhotoPath = storageService.storeFile(authenticationRequestTO.driverLicenseFrontPhoto)
-        val backLicencePhotoPath = storageService.storeFile(authenticationRequestTO.driverLicenseBackPhoto)
+        val frontLicencePhotoPath = storageService.storeFile(licenseFrontPhoto)
+        val backLicencePhotoPath = storageService.storeFile(licenseBackPhoto)
 
         val authenticationInfo = DriverAuthenticationInfo(
             submittedAt = Date.from(Instant.now()),
@@ -179,6 +182,8 @@ open class DriverAuthenticationServiceImpl(
 
         driverAuthenticationLogRepository.save(authenticationLog)
 
+        // TODO: Send email to driver about verification result if rejected
+
         // TODO: Inform employee about pending verification request
 
         if (!success)
@@ -236,7 +241,7 @@ open class DriverAuthenticationServiceImpl(
 
     override fun getPendingVerifications(): ResultInterface {
         val pendingVerifications = driverPersonalInfoRepository.findAllByVerificationStatus(
-            VerificationStatus.PENDING_AUTO_VERIFICATION
+            VerificationStatus.PENDING_MANUAL_VERIFICATION
         )
 
         val pendingVerificationsList = pendingVerifications.map {

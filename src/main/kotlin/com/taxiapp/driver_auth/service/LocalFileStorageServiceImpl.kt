@@ -23,7 +23,7 @@ class LocalFileStorageServiceImpl : FileStorageService {
         val filename = UUID.randomUUID().toString() + "-" + file.originalFilename
         val destinationFile = rootLocation.resolve(filename)
         file.transferTo(destinationFile)
-        return destinationFile.toString()
+        return filename
     }
 
     override fun getFileUrl(filePath: String): String {

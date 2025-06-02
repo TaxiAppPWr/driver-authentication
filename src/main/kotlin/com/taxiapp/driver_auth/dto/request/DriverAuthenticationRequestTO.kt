@@ -11,10 +11,6 @@ data class DriverAuthenticationRequestTO(
 
     val plateNumber: String,
 
-    val driverLicenseFrontPhoto: MultipartFile,
-
-    val driverLicenseBackPhoto: MultipartFile,
-
     val pesel: String,
 
     val address: AddressTO
