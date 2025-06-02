@@ -50,5 +50,12 @@ class DriverController(
         return ResponseEntity.status(resultTO.httpStatus).body(if (!resultTO.isSuccess())resultTO.messages else null)
     }
 
+    @GetMapping("/health")
+    fun health(): ResponseEntity<Map<String, String>> {
+        return ResponseEntity.ok(mapOf(
+            "status" to "UP",
+            "service" to "driver-paycheck-service"
+        ))
+    }
 
 }
