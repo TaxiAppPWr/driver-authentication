@@ -22,4 +22,5 @@ interface DriverAuthenticationService {
     fun rejectVerification(id: Long): ResultInterface
     fun createDriverInfo(userEvent: DriverCreatedEvent)
     fun performAutoVerification(username: String)
+    fun getFirstPendingVerification(): ResultInterface
 }

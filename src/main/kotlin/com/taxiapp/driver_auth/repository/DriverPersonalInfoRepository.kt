@@ -10,4 +10,5 @@ interface DriverPersonalInfoRepository : JpaRepository<DriverPersonalInfo, Long>
     fun findByUsername(username: String): DriverPersonalInfo?
     fun findAllByVerificationStatus(verificationStatus: VerificationStatus): List<DriverPersonalInfo>
     fun existsByUsername(username: String): Boolean
+    fun findFirstByVerificationStatus(verificationStatus: VerificationStatus): DriverPersonalInfo?
 }

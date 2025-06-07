@@ -199,6 +199,21 @@ open class DriverAuthenticationServiceImpl(
 
     }
 
+    override fun getFirstPendingVerification(): ResultInterface {
+        val driverPersonalInfo = driverPersonalInfoRepository.findFirstByVerificationStatus(
+            VerificationStatus.PENDING_MANUAL_VERIFICATION
+        ) ?: return ResultTO(httpStatus = HttpStatus.NOT_FOUND)
+
+        if (driverPersonalInfo.driverAuthenticationInfo == null) {
+            return ResultTO(
+                httpStatus = HttpStatus.BAD_REQUEST,
+                messages = listOf("Driver authentication info not found")
+            )
+        }
+
+        return getPendingVerificationDetails(driverPersonalInfo)
+    }
+
     @Transactional
     override fun cancelDriverAuthentication(
         username: String,
@@ -267,27 +282,25 @@ open class DriverAuthenticationServiceImpl(
                 messages = listOf("Driver authentication not subject to manual verification")
             )
         }
+        return getPendingVerificationDetails(driverPersonalInfo)
+    }
 
-        if (driverPersonalInfo.driverAuthenticationInfo == null) {
-            return ResultTO(
-                httpStatus = HttpStatus.BAD_REQUEST,
-                messages = listOf("Driver authentication info not found")
-            )
-        }
-        val driverAuthenticationInfo = driverPersonalInfo.driverAuthenticationInfo!!
+    private fun getPendingVerificationDetails(
+        driverPersonalInfo: DriverPersonalInfo
+    ): PendingVerificationTO {
+        val authenticationInfo = driverPersonalInfo.driverAuthenticationInfo
+            ?: throw IllegalArgumentException("Driver authentication info not found")
 
-        val pendingVerification = PendingVerificationTO(
+        return PendingVerificationTO(
             id = driverPersonalInfo.id!!,
             name = driverPersonalInfo.name,
             surname = driverPersonalInfo.surname,
-            driverLicenceNumber = driverAuthenticationInfo.driverLicenceNumber,
-            registrationDocumentNumber = driverAuthenticationInfo.registrationDocumentNumber,
-            plateNumber = driverAuthenticationInfo.plateNumber,
-            driverLicenseFrontPhotoUrl = storageService.getFileUrl(driverAuthenticationInfo.driverLicenseFrontPhotoPath),
-            driverLicenseBackPhotoUrl = storageService.getFileUrl(driverAuthenticationInfo.driverLicenseBackPhotoPath)
+            driverLicenceNumber = authenticationInfo.driverLicenceNumber,
+            registrationDocumentNumber = authenticationInfo.registrationDocumentNumber,
+            plateNumber = authenticationInfo.plateNumber,
+            driverLicenseFrontPhotoUrl = storageService.getFileUrl(authenticationInfo.driverLicenseFrontPhotoPath),
+            driverLicenseBackPhotoUrl = storageService.getFileUrl(authenticationInfo.driverLicenseBackPhotoPath)
         )
-
-        return pendingVerification
     }
 
     @Transactional
