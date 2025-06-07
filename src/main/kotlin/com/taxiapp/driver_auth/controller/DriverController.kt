@@ -2,10 +2,7 @@ package com.taxiapp.driver_auth.controller
 
 import com.taxiapp.driver_auth.dto.request.DriverAuthenticationRequestTO
 import com.taxiapp.driver_auth.service.DriverAuthenticationServiceImpl
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -17,9 +14,8 @@ class DriverController(
 ) {
 
     @GetMapping("/status")
-    fun getDriverAuthenticationStatus(): ResponseEntity<Any> {
-        val principal = SecurityContextHolder.getContext().authentication
-        return driverAuthenticationService.getAuthenticationStatus(principal.name).let { result ->
+    fun getDriverAuthenticationStatus(@RequestHeader username: String): ResponseEntity<Any> {
+        return driverAuthenticationService.getAuthenticationStatus(username).let { result ->
             if (result.isSuccess()) {
                 return ResponseEntity.ok(result)
             }
@@ -31,11 +27,11 @@ class DriverController(
     fun submitDriverAuthentication(
         @RequestPart driverLicenseFrontPhoto: MultipartFile,
         @RequestPart driverLicenseBackPhoto: MultipartFile,
-        @RequestPart request: DriverAuthenticationRequestTO
+        @RequestPart request: DriverAuthenticationRequestTO,
+        @RequestHeader username: String
     ): ResponseEntity<Any> {
-        val principal = SecurityContextHolder.getContext().authentication
         val resultTO = driverAuthenticationService.submitDriverAuthentication(
-            principal.name,
+            username,
             request,
             driverLicenseFrontPhoto,
             driverLicenseBackPhoto
@@ -44,9 +40,8 @@ class DriverController(
     }
 
     @DeleteMapping("/")
-    fun cancelDriverAuthentication(): ResponseEntity<Any> {
-        val principal = SecurityContextHolder.getContext().authentication
-        val resultTO = driverAuthenticationService.cancelDriverAuthentication(principal.name)
+    fun cancelDriverAuthentication(@RequestHeader username: String): ResponseEntity<Any> {
+        val resultTO = driverAuthenticationService.cancelDriverAuthentication(username)
         return ResponseEntity.status(resultTO.httpStatus).body(if (!resultTO.isSuccess())resultTO.messages else null)
     }
 
@@ -54,7 +49,7 @@ class DriverController(
     fun health(): ResponseEntity<Map<String, String>> {
         return ResponseEntity.ok(mapOf(
             "status" to "UP",
-            "service" to "driver-paycheck-service"
+            "service" to "driver-authentication-service"
         ))
     }
 
