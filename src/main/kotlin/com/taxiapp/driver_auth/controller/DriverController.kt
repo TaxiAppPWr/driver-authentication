@@ -23,7 +23,7 @@ class DriverController(
         }
     }
 
-    @PostMapping("/")
+    @PostMapping("")
     fun submitDriverAuthentication(
         @RequestPart driverLicenseFrontPhoto: MultipartFile,
         @RequestPart driverLicenseBackPhoto: MultipartFile,
@@ -39,7 +39,7 @@ class DriverController(
         return ResponseEntity.status(resultTO.httpStatus).body(if (!resultTO.isSuccess())resultTO.messages else null)
     }
 
-    @DeleteMapping("/")
+    @DeleteMapping("")
     fun cancelDriverAuthentication(@RequestHeader username: String): ResponseEntity<Any> {
         val resultTO = driverAuthenticationService.cancelDriverAuthentication(username)
         return ResponseEntity.status(resultTO.httpStatus).body(if (!resultTO.isSuccess())resultTO.messages else null)
