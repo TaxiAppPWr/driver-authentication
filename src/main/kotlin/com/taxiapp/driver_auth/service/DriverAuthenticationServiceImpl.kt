@@ -193,9 +193,6 @@ open class DriverAuthenticationServiceImpl(
 
         driverAuthenticationLogRepository.save(authenticationLog)
 
-
-        // TODO: Inform employee about pending verification request
-
         if (!success) {
             template.convertAndSend(
                 exchange.name,
@@ -216,10 +213,12 @@ open class DriverAuthenticationServiceImpl(
             )
         } else {
             val publishRequest = PublishRequest {
-                topicArn =
+                topicArn = notificationServiceAddress
                 message = "Driver $username has been auto-verified and is pending manual verification."
             }
-            snsClient.publish()
+            runBlocking {
+                launch { snsClient.publish(publishRequest) }
+            }
         }
 
     }
