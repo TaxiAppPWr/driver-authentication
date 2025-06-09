@@ -53,7 +53,7 @@ jobs:
       - name: Update container image
         run: |
           kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
-            ${{ env.CONTAINER_NAME }}=${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPOSITORY }}:${{ github.sha }} \
+            ${{ env.CONTAINER_NAME }}=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_REPOSITORY }}:${{ github.sha }} \
             -n ${{ env.NAMESPACE }}
 
       - name: Verify rollout
