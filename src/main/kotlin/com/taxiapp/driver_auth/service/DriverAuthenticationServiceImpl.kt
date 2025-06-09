@@ -2,11 +2,14 @@ package com.taxiapp.driver_auth.service
 
 import aws.sdk.kotlin.services.cognitoidentityprovider.CognitoIdentityProviderClient
 import aws.sdk.kotlin.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest
+import aws.sdk.kotlin.services.sns.SnsClient
+import aws.sdk.kotlin.services.sns.model.PublishRequest
 import com.taxiapp.driver_auth.dto.AddressTO
 import com.taxiapp.driver_auth.dto.event.DriverAuthenticationApprovedEvent
 import com.taxiapp.driver_auth.dto.event.DriverAuthenticationFailedEvent
 import com.taxiapp.driver_auth.dto.event.DriverCreatedEvent
 import com.taxiapp.driver_auth.dto.event.DriverFormSubmittedEvent
+import com.taxiapp.driver_auth.dto.http.EmailSendRequestTO
 import com.taxiapp.driver_auth.dto.request.DriverAuthenticationRequestTO
 import com.taxiapp.driver_auth.dto.response.*
 import com.taxiapp.driver_auth.entity.DriverAuthenticationInfo
@@ -25,7 +28,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.util.UriComponentsBuilder
 import java.time.Instant
 import java.util.*
 
@@ -37,7 +42,9 @@ open class DriverAuthenticationServiceImpl(
     private val storageService: FileStorageService,
     private val exchange: TopicExchange,
     private val template: RabbitTemplate,
-    private val cognitoClient: CognitoIdentityProviderClient
+    private val restTemplate: RestTemplate,
+    private val cognitoClient: CognitoIdentityProviderClient,
+    private val snsClient: SnsClient
 ) : DriverAuthenticationService {
 
     @Value("\${rabbit.topic.driver-auth.submitted}")
@@ -54,6 +61,11 @@ open class DriverAuthenticationServiceImpl(
 
     @Value("\${aws.cognito.group-name}")
     private val cognitoGroupName: String? = null
+
+    @Value("\${service.address.notification}")
+    private val notificationServiceAddress: String? = null
+
+    @Value("\${aws.sns.employeetopic.arn}")
 
     override fun createDriverInfo(userEvent: DriverCreatedEvent) {
         if (driverPersonalInfoRepository.existsByUsername(userEvent.username))
@@ -181,11 +193,10 @@ open class DriverAuthenticationServiceImpl(
 
         driverAuthenticationLogRepository.save(authenticationLog)
 
-        // TODO: Send email to driver about verification result if rejected
 
         // TODO: Inform employee about pending verification request
 
-        if (!success)
+        if (!success) {
             template.convertAndSend(
                 exchange.name,
                 "$driverAuthFailedTopic",
@@ -195,6 +206,21 @@ open class DriverAuthenticationServiceImpl(
                     autoVerification = true
                 )
             )
+            sendEmail(
+                recipient = driverPersonalInfo.email,
+                subject = "Driver Authentication Failed",
+                body = "Dear ${driverPersonalInfo.name},\n\n" +
+                        "Your driver authentication request has failed during automatic verification. " +
+                        "Please resubmit your application.\n\n" +
+                        "Best regards,\nTaxiApp Team"
+            )
+        } else {
+            val publishRequest = PublishRequest {
+                topicArn =
+                message = "Driver $username has been auto-verified and is pending manual verification."
+            }
+            snsClient.publish()
+        }
 
     }
 
@@ -369,7 +395,13 @@ open class DriverAuthenticationServiceImpl(
             event
         )
 
-        // TODO: Send approval email to driver
+        sendEmail(
+            recipient = driverPersonalInfo.email,
+            subject = "Driver Authentication Approved",
+            body = "Dear ${driverPersonalInfo.name},\n\n" +
+                    "Your driver authentication request has been approved. You can now start accepting rides.\n\n" +
+                    "Best regards,\nTaxiApp Team"
+        )
 
 
         return ResultTO(
@@ -404,11 +436,35 @@ open class DriverAuthenticationServiceImpl(
 
         driverAuthenticationLogRepository.save(authenticationLog)
 
-        // TODO: Send rejection email to driver
+        sendEmail(
+            recipient = driverPersonalInfo.email,
+            subject = "Driver Authentication Rejected",
+            body = "Dear ${driverPersonalInfo.name},\n\n" +
+                    "Your driver authentication request has been rejected. You can resubmit it using form.\n\n" +
+                    "Best regards,\nTaxiApp Team"
+        )
 
         return ResultTO(
             httpStatus = HttpStatus.NO_CONTENT,
             messages = listOf("Driver authentication rejected successfully")
         )
+    }
+
+    private fun sendEmail(recipient: String, subject: String, body: String) {
+        val notificationUri = UriComponentsBuilder
+            .fromUriString("$notificationServiceAddress/api/notification/email")
+            .build()
+            .toUri()
+
+        val emailRequest = EmailSendRequestTO(
+            recipient = recipient,
+            subject = subject,
+            body = body
+        )
+
+        val response = restTemplate.postForEntity(notificationUri, emailRequest, Object::class.java)
+        check(!response.statusCode.is2xxSuccessful) {
+            throw IllegalStateException("Failed to send email: ${response.body}")
+        }
     }
 }

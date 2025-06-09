@@ -178,6 +178,11 @@
         </dependency>
         <dependency>
             <groupId>aws.sdk.kotlin</groupId>
+            <artifactId>sns-jvm</artifactId>
+            <version>1.4.95</version>
+        </dependency>
+        <dependency>
+            <groupId>aws.sdk.kotlin</groupId>
             <artifactId>s3-jvm</artifactId>
             <version>1.4.82</version>
         </dependency>
