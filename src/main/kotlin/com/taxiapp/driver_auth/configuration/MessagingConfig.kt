@@ -12,7 +12,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-open class MessagingConfig {
+open class MessagingConfig(
+    @Value("\${spring.datasource.url}") val url: String
+) {
     @Value("\${rabbit.exchange.users.name}")
     private val usersExchangeName: String? = null
 

@@ -102,7 +102,6 @@ open class DriverAuthenticationServiceImpl(
             )
         }
 
-        // TODO: Save photos to S3
         val frontLicencePhotoPath = storageService.storeFile(licenseFrontPhoto)
         val backLicencePhotoPath = storageService.storeFile(licenseBackPhoto)
 
