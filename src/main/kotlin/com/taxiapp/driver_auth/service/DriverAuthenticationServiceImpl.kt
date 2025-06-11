@@ -23,6 +23,7 @@ import com.taxiapp.driver_auth.repository.DriverPersonalInfoRepository
 import jakarta.transaction.Transactional
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 import org.springframework.amqp.core.TopicExchange
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Value
@@ -46,6 +47,7 @@ open class DriverAuthenticationServiceImpl(
     private val cognitoClient: CognitoIdentityProviderClient,
     private val snsClient: SnsClient
 ) : DriverAuthenticationService {
+    private val logger = LoggerFactory.getLogger(DriverAuthenticationServiceImpl::class.java)
 
     @Value("\${rabbit.topic.driver-auth.submitted}")
     private val driverAuthSubmittedTopic: String? = null
@@ -171,6 +173,7 @@ open class DriverAuthenticationServiceImpl(
 
     @Transactional
     override fun performAutoVerification(username: String) {
+        logger.info("Performing auto-verification for driver: $username")
         val driverPersonalInfo = driverPersonalInfoRepository.findByUsername(username)
             ?: return
 
