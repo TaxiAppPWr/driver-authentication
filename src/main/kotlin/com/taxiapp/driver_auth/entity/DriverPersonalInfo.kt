@@ -21,16 +21,16 @@ class DriverPersonalInfo(
     var id: Long? = null,
 
     @Column
-    var username: String,
+    var username: String = "",
 
     @Column
-    var name: String,
+    var name: String = "",
 
     @Column
-    var surname: String,
+    var surname: String = "",
 
     @Column
-    var email: String,
+    var email: String = "",
 
     @Column
     var verificationStatus: VerificationStatus = VerificationStatus.WAITING_FOR_SUBMIT,

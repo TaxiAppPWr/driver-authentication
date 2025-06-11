@@ -6,5 +6,6 @@ enum class VerificationStatus {
     PENDING_MANUAL_VERIFICATION,
     APPROVED,
     REJECTED,
-    CANCELLED
+    CANCELLED,
+    UNKNOWN
 }

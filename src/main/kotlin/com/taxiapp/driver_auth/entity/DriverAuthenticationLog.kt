@@ -16,16 +16,16 @@ class DriverAuthenticationLog(
     var driverPersonalInfo: DriverPersonalInfo,
 
     @Column
-    var timestamp: Date,
+    var timestamp: Date = Date(),
 
     @Column
-    var eventType: AuthenticationEvent,
+    var eventType: AuthenticationEvent = AuthenticationEvent.UNKNOWN,
 
     @Column
-    var statusBefore: VerificationStatus,
+    var statusBefore: VerificationStatus = VerificationStatus.UNKNOWN,
 
     @Column
-    var statusAfter: VerificationStatus,
+    var statusAfter: VerificationStatus = VerificationStatus.UNKNOWN,
 
     @Column(length = 1024, nullable = true)
     var comment: String? = null,

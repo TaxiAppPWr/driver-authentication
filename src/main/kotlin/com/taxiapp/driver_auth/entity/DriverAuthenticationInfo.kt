@@ -11,36 +11,36 @@ class DriverAuthenticationInfo(
     var id: Long = 0,
 
     @Column
-    var submittedAt: Date,
+    var submittedAt: Date = Date(),
 
     @Column
-    var driverLicenceNumber: String,
+    var driverLicenceNumber: String = "",
 
     @Column
-    var registrationDocumentNumber: String,
+    var registrationDocumentNumber: String = "",
 
     @Column
-    var plateNumber: String,
+    var plateNumber: String = "",
 
     @Column
-    var driverLicenseFrontPhotoPath: String,
+    var driverLicenseFrontPhotoPath: String = "",
 
     @Column
-    var driverLicenseBackPhotoPath: String,
+    var driverLicenseBackPhotoPath: String = "",
 
     @Column
-    var pesel: String,
+    var pesel: String = "",
 
     @Column
-    var street: String,
+    var street: String = "",
     @Column
-    val buildingNumber: String,
+    val buildingNumber: String = "",
     @Column
-    val apartmentNumber: String?,
+    val apartmentNumber: String? = null,
     @Column
-    val postCode: String,
+    val postCode: String = "",
     @Column
-    val city: String,
+    val city: String = "",
     @Column
-    val country: String
+    val country: String = "",
 )
