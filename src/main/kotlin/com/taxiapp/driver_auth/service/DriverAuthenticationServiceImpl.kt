@@ -466,7 +466,7 @@ open class DriverAuthenticationServiceImpl(
         )
 
         val response = restTemplate.postForEntity(notificationUri, emailRequest, Object::class.java)
-        check(!response.statusCode.is2xxSuccessful) {
+        check(response.statusCode.is2xxSuccessful) {
             throw IllegalStateException("Failed to send email: ${response.statusCode} - ${response.body}")
         }
     }
