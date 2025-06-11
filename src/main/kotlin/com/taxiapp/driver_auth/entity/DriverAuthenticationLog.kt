@@ -13,7 +13,7 @@ class DriverAuthenticationLog(
 
     @ManyToOne
     @JoinColumn(name = "driver_personal_info_id", nullable = false)
-    var driverPersonalInfo: DriverPersonalInfo,
+    var driverPersonalInfo: DriverPersonalInfo = DriverPersonalInfo(),
 
     @Column
     var timestamp: Date = Date(),

@@ -66,6 +66,7 @@ open class DriverAuthenticationServiceImpl(
     private val notificationServiceAddress: String? = null
 
     @Value("\${aws.sns.employeetopic.arn}")
+    private val employeeNotificationArn: String? = null
 
     override fun createDriverInfo(userEvent: DriverCreatedEvent) {
         if (driverPersonalInfoRepository.existsByUsername(userEvent.username))
@@ -213,7 +214,7 @@ open class DriverAuthenticationServiceImpl(
             )
         } else {
             val publishRequest = PublishRequest {
-                topicArn = notificationServiceAddress
+                topicArn = employeeNotificationArn
                 message = "Driver $username has been auto-verified and is pending manual verification."
             }
             runBlocking {
