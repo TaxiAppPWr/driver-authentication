@@ -180,8 +180,8 @@ open class DriverAuthenticationServiceImpl(
         if (driverPersonalInfo.verificationStatus != VerificationStatus.PENDING_AUTO_VERIFICATION)
             return
 
-        // Using mocked verification - 90% success rate
-        val success = (0..9).random() < 9
+        // Using mocked verification - 100% success rate
+        val success = (0..9).random() < 10
 
         val authenticationLog = DriverAuthenticationLog(
             driverPersonalInfo = driverPersonalInfo,
