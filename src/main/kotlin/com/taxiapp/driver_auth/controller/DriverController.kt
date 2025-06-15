@@ -49,7 +49,7 @@ class DriverController(
     fun health(): ResponseEntity<Map<String, String>> {
         return ResponseEntity.ok(mapOf(
             "status" to "UP",
-            "service" to "driver-authentication-service"
+            "service" to "driververification-service"
         ))
     }
 
